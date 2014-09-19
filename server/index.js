@@ -18,13 +18,13 @@ console.log("websocket server created")
 
 wss.on("connection", function(ws) {
   console.log("websocket connection open")
-
+  console.log("No of clients is %d",this.clients.length)
   ws.on("message", function(data,flag) {
     //Broadcast the message to all connected clients.
     console.log("recieved: %s",data)
     wss.broadcast = function(data) {
             for(var i in this.clients){
-              this.clients[i].send(data);
+              this.clients[i].send(data,{binary:true});
               console.log("Sending to client")
             }
             console.log("Broadcast done")

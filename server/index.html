@@ -18,14 +18,13 @@
     </style>
 
     <script>
+      var selectedColor = 0
       var host = location.origin.replace(/^http/, 'ws')
       var ws = new WebSocket(host);
       ws.onmessage = function (event) {
-        var colors = ["#000000","FF0000","#00FF00","#0000FF","#FFFFFF"]
-        count = parseInt(event.data);
-        selectedColor=(colors[count%colors.length])
-        console.log("Count is  %d and Selected color is %s",count,selectedColor)
-        document.bgColor=selectedColor
+        var colors = ["#000000","FF0000"]
+        selectedColor=(selectedColor+1)%2
+        document.bgColor=colors[selectedColor]
       };
     </script>
   </head>
