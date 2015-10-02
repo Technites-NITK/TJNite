@@ -5,27 +5,21 @@ from pygame import display
 from pygame.draw import *
 import scipy
 import time
+import numpy as np
+import pyaudio
 
 from phosphene import audio, util, signalutil, signal
 from phosphene.graphs import barGraph, boopGraph, graphsGraphs
 
 from threading import Thread
 
-if len(sys.argv) < 2:
-    print "Usage: %s file.mp3" % sys.argv[0]
-    sys.exit(1)
-else:
-    fPath = sys.argv[1]
-
 # initialize PyGame
 SCREEN_DIMENSIONS = (640, 480)
 pygame.init()
 surface = display.set_mode(SCREEN_DIMENSIONS)
-
-sF, data = audio.read(fPath)
-
+data = np.zeros((0,2)) #HACK
+sF = 44100
 sig = signal.Signal(data, sF)
-sig.A = signal.lift((data[:,0] + data[:,1]) / 2, True)
 
 def beats(s):
     """ Extract beats in the signal in 4 different
@@ -34,10 +28,12 @@ def beats(s):
     # quick note: s.avg4 is a decaying 4 channel fft
     #             s.longavg4 decays at a slower rate
     # beat detection huristic:
-    #       beat occured if s.avg4 * threshold > s.longavg4ii    threshold = 1.414
+    #       beat occured if s.avg4 * threshold > s.longavg4
+
+    threshold = 1.7
     return util.numpymap(
             lambda (x, y): 1 if x > threshold * y else 0,
-            zip(s.avg12 * threshold, s.longavg12))[:4]
+            zip(s.avg4 * threshold, s.longavg4))
 
 # Lift the beats
 sig.beats = signal.lift(beats)
@@ -70,10 +66,27 @@ def repl():
     replThread.start()
 #repl()
 
+def initRecording(sig):
+    p = pyaudio.PyAudio()
+    def callback(in_data, frame_count, time_info, status):
+        nextTime = time.time()
+        newSamples = np.fromstring(in_data,dtype=np.int16)
+        sig.Y = np.append(sig.Y,zip(newSamples[::2],newSamples[1::2]),0)
+        sig.A = signal.lift((sig.Y[:,0] + sig.Y[:,1]) / 2, True)
+        startTime = nextTime
+        return (in_data,pyaudio.paContinue)
+    startTime = time.time()
+    stream = p.open(channels=2,
+                    format=pyaudio.paInt16,
+                    frames_per_buffer=1024,
+                    rate=44100,
+                    input=True,
+                    input_device_index=0,
+                    stream_callback=callback,
+                    )
+    return stream
 # apply utility "lift"s -- this sets up signal.avgN and longavgN variables
 signalutil.setup(sig)
-soundObj = audio.makeSound(sF, data)
-    # make a pygame Sound object from the data
-soundObj.play()                      # start playing it. This is non-blocking
 # perceive signal at 90 fps (or lesser when not possible)
-signal.perceive([graphsProcess], sig, 90)
+stream = initRecording(sig)
+signal.realTimeProcess([graphsProcess], sig, 90)
