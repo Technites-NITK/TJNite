@@ -32,7 +32,7 @@ Head over to localhost:5000 on a browser!
   * lame
 
 - Additional python dependencies
-  * websocket
+  * websocket-client
 
 - Node.js
   * ws
