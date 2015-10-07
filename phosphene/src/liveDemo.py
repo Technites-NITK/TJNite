@@ -7,7 +7,7 @@ import scipy
 import time
 import numpy as np
 import pyaudio
-
+import websocket
 from phosphene import audio, util, signalutil, signal
 from phosphene.graphs import barGraph, boopGraph, graphsGraphs
 
@@ -21,6 +21,7 @@ data = np.zeros((0,2)) #HACK
 sF = 44100
 sig = signal.Signal(data, sF)
 
+ws = websocket.create_connection("ws://localhost:5000")
 def beats(s):
     """ Extract beats in the signal in 4 different
         frequency ranges """
@@ -34,6 +35,19 @@ def beats(s):
     return util.numpymap(
             lambda (x, y): 1 if x > threshold * y else 0,
             zip(s.avg4 * threshold, s.longavg4))
+
+    
+beatCount=0
+totalCount=0
+def beatDetected(s):
+    global beatCount
+    global totalCount
+    if(s.beats[0] or s.beats[1]):
+        beatCount+=1
+        print "Beat detected -", beatCount, '/', totalCount
+        sendString = str(beatCount)
+        ws.send(sendString)
+    totalCount+=1
 
 # Lift the beats
 sig.beats = signal.lift(beats)
@@ -81,7 +95,7 @@ def initRecording(sig):
                     frames_per_buffer=1024,
                     rate=44100,
                     input=True,
-                    input_device_index=0,
+                    input_device_index=3, #change index based on the device id
                     stream_callback=callback,
                     )
     return stream
@@ -89,4 +103,4 @@ def initRecording(sig):
 signalutil.setup(sig)
 # perceive signal at 90 fps (or lesser when not possible)
 stream = initRecording(sig)
-signal.realTimeProcess([graphsProcess], sig, 90)
+signal.realTimeProcess([graphsProcess, beatDetected], sig, 32)

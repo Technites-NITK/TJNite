@@ -23,6 +23,13 @@ python demo.py <pathToSong>
 
 Head over to localhost:5000 on a browser!
 
+### RealTime Broadcast :
+
+Run the liveDemo.py file in phosphene/src.
+```bash
+python liveDemo.py
+```
+
 ## Dependencies :
 
 - For Phosphene
