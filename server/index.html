@@ -23,7 +23,7 @@
       var ws = new WebSocket(host);
       ws.onmessage = function (event) {
         var colors = ["#221E1D","#ECEAE0","#63AA9C","#E9633B","#222930","#4EB1BA","#E9E9E9"]
-        selectedColor=(selectedColor+3)%8
+        selectedColor=(event.data + 3)%8
      document.getElementById("out").style.backgroundColor = colors[selectedColor]
      document.getElementById("middle").style.backgroundColor = colors[selectedColor+1]; 
      document.getElementById("in").style.backgroundColor = colors[selectedColor+2] 

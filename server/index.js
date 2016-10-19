@@ -24,7 +24,7 @@ wss.on("connection", function(ws) {
     console.log("recieved: %s",data)
     wss.broadcast = function(data) {
             for(var i in this.clients){
-              this.clients[i].send(data,{binary:true});
+              this.clients[i].send(data);
               console.log("Sending to client")
             }
             console.log("Broadcast done")
